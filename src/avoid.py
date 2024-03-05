@@ -91,45 +91,17 @@ class Robot:
         vel_msg.linear.x = 0
         self.velocity_pub.publish(vel_msg)
 
-    def rotate(self, angle, clockwise):
-        print("ROTATING")
-        outData = Twist()
-
-        angular_speed = degrees2radians(30)
-        outData.angular.z = -angular_speed if clockwise else angular_speed
-
-        target_yaw = self.normalize_angle(self.yaw + degrees2radians(angle) * (-1 if clockwise else 1))
-
-        self.velocity_pub.publish(outData)
-        rospy.sleep(0.1)
-
-        current_yaw = self.yaw
-        while not self.is_yaw_close(current_yaw, target_yaw, 0.05):
-            current_yaw = self.yaw
-            self.velocity_pub.publish(outData)
-
-        self.stop_moving()
-
-    def rotate_direction_most_space(self):
-        if self.left > self.right:
-            print("left greater")
-            self.rotate(45, False)
-        else:
-            print("right greater")
-            self.rotate(45, True)
 
     def move_and_avoid(self):
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if not self.nearing_object:
                 print("No object!")
-                # self.move(0.05, True)
+                self.move(0.05, True)
             else:
                 self.stop_moving()
                 print("Obstacle detected, rotating")
-                # self.rotate_direction_most_space()
-                # if self.front > OBSTACLE_DISTANCE_THRESHOLD:
-                #     self.nearing_object = False
+
         rate.sleep()
 
 # ************** 
@@ -158,22 +130,3 @@ if __name__ == '__main__':
     robot.move_and_avoid()
 
     rospy.spin()
-
-
-"""
-to do the fancy stuff:
--I had to modify the rotate function better to fully accommodate the yaw instead of time
--rotate recorded the current and target yaw based on desired rotation angle (got data from callback)
--I had to make sure to stop the robot after the rotation was done or this caused issues
--I got some helper functions to normalize the yaw to be within -pi to pi. which solved an issue
-    I had with the robot not rotating. I dont completely understand the math but someone on 
-    stackoverflow posted about this and it worked
--I wrote a function that determines which way it should rotate by checking the left and right 
-    laser data to see which is greater
--I also wrote a function that stops the robot, and this helped solve some other movement issues
-    with rotating, strange how it solved issues that I did not think it would
--The laser callback had to be updated to account for the value being "inf", which would occur if 
-    the robot was against a wall or if it had enough space that it went out of range
-    -I ended up getting the mean of the range of measurements for each side for better accuracy
--All of this comes together in the move_and_avoid() method which avoids obsticles
-"""
