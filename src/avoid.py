@@ -35,16 +35,17 @@ class Robot:
     def scanCallback(self, data):
 
         front_distances = data.ranges[-10:] + data.ranges[:10]
-        self.front = np.mean([dist for dist in front_distances if not np.isinf(dist)])
-        
+        self.front = np.mean([dist for dist in front_distances if not np.isinf(dist) and dist != 0])
+
         left_distances = data.ranges[80:100]
-        self.left = np.mean([dist for dist in left_distances if not np.isinf(dist)])
-        
+        self.left = np.mean([dist for dist in left_distances if not np.isinf(dist) and dist != 0])
+
         behind_distances = data.ranges[170:190]
-        self.behind = np.mean([dist for dist in behind_distances if not np.isinf(dist)])
-        
+        self.behind = np.mean([dist for dist in behind_distances if not np.isinf(dist) and dist != 0])
+
         right_distances = data.ranges[260:280]
-        self.right = np.mean([dist for dist in right_distances if not np.isinf(dist)])
+        self.right = np.mean([dist for dist in right_distances if not np.isinf(dist) and dist != 0])
+
 
         self.nearing_object = self.front < OBSTACLE_DISTANCE_THRESHOLD
 
@@ -121,14 +122,14 @@ class Robot:
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if not self.nearing_object:
-                print("Moving forward")
-                self.move(0.05, True)
+                print("No object!")
+                # self.move(0.05, True)
             else:
                 self.stop_moving()
                 print("Obstacle detected, rotating")
-                self.rotate_direction_most_space()
-                if self.front > OBSTACLE_DISTANCE_THRESHOLD:
-                    self.nearing_object = False
+                # self.rotate_direction_most_space()
+                # if self.front > OBSTACLE_DISTANCE_THRESHOLD:
+                #     self.nearing_object = False
         rate.sleep()
 
 # ************** 
