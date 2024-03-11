@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Author: Hope Crisafi
-# 02/08/24
+# 03/06/24
 
 import numpy as np
 import rospy, math
@@ -15,6 +15,11 @@ from std_msgs.msg import Float64
 OBSTACLE_DISTANCE_THRESHOLD = 0.5
 
 class LaneAndAvoid:
+
+
+    '''
+        INIT EVERYTHING
+    '''
     def __init__(self):
         
         rospy.init_node('lane_and_avoid', anonymous=True)
@@ -25,10 +30,6 @@ class LaneAndAvoid:
 
 
         self.front = 0.0
-        self.left = 0.0
-        self.behind = 0.0
-        self.right = 0.0
-        self.yaw = 0.0
         self.nearing_object = False
 
         self.twister = Twist()
@@ -36,42 +37,23 @@ class LaneAndAvoid:
         self.bringItAroundTown = False
 
 
+    '''
+    LIDAR Scanner callback which gets the information in front
+    of it and sets an instance variable to whether it senses an object or not
+    '''
     def scanCallback(self, data):
 
         front_distances = data.ranges[-10:] + data.ranges[:10]
         self.front = np.mean([dist for dist in front_distances if not np.isinf(dist) and dist != 0])
 
-        # left_distances = data.ranges[80:100]
-        # self.left = np.mean([dist for dist in left_distances if not np.isinf(dist) and dist != 0])
-
-        # behind_distances = data.ranges[170:190]
-        # self.behind = np.mean([dist for dist in behind_distances if not np.isinf(dist) and dist != 0])
-
-        # right_distances = data.ranges[260:280]
-        # self.right = np.mean([dist for dist in right_distances if not np.isinf(dist) and dist != 0])
-
-
         self.nearing_object = self.front < OBSTACLE_DISTANCE_THRESHOLD
 
-        # print("Front: {:.2f}, Left: {:.2f}, Behind: {:.2f}, Right: {:.2f}".format(
-        #     data.ranges[0], data.ranges[90], data.ranges[180], data.ranges[270]))
 
-    
-
-    def move_robot(self, linear_x, angular_z):
-        self.twister.linear.x = linear_x
-        self.twister.angular.z = angular_z
-        self.velocity_pub.publish(self.twister)
-
-    
-    def degrees2radians(self, angle):
-        return angle * (math.pi/180.0)
-
-
-
-
+    '''
+    Rotates turtlebot based off of an angle and if it goes
+    Clockwise or not
+    '''
     def rotate(self, angle, isClockwise):
-        print("ROTATING")
         outData = Twist()
         t0 = rospy.get_rostime().secs
 
@@ -93,36 +75,28 @@ class LaneAndAvoid:
             current_angle = (rospy.get_rostime().secs - t0) * self.degrees2radians(30)
             rate.sleep()
 
-        #Always good practice to reset according to previous comments
+
+        #Reset Velocity 
         outData.angular.z = 0
         self.velocity_pub.publish(outData)
         rospy.sleep(0.5)
 
-        
 
-    def bring_it_around_town(self):
-        print("Bring it around town function function function!")
-        # Move backward for half a meter
-        self.rotate(90, False)  # -90 degrees in radians
+    '''
+        Brings it around town baby
+    '''
+    def bring_it_around_town(self):    
 
-        print("1")
-        # Move forward half a meter
-        self.move(0.5, True)
-        # Rotate right 90 degrees
-        self.rotate(90, True)  # -90 degrees in radians
-        # Move forward half a meter again
-        self.move(0.5, True)
-        # Rotate left again to complete the loop
-        self.rotate(90, True)  # -90 degrees in radians
-        # Move forward half a meter again
-        self.move(0.5, True)
-        # Rotate left again to complete the loop
-        self.rotate(90, False)  # -90 degrees in radians
-        print("Last")
+        for i in range(7)
+            self.move(0.5, i != 0 or i != 6)
+            self.rotate(90)
 
 
+    '''
+        Moves the turtlebot based off of a distance and whether 
+        it should go forwards or backwards
+    '''
     def move(self, distance, isForward):
-        print("MOVING IN FUNCTION!")
         outData = Twist()
         t0 = rospy.get_rostime().secs
 
@@ -144,13 +118,20 @@ class LaneAndAvoid:
             rate.sleep()
         
 
-        #RESET Veloicty
+        #Reset Veloicty
         outData.linear.z = 0
         self.velocity_pub.publish(outData)
         
         print("Move end")
         rospy.sleep(0.5)
 
+
+    '''
+        Callback function for the /detect/lane publisher.
+        We get the data for detecting the lane, and then inside
+        our callback we check whether we should follow the lane,
+        stop for an object in front, or go around that object.
+    '''
     def cbFollowLane(self, desired_center):
 
         center = desired_center.data
@@ -168,27 +149,35 @@ class LaneAndAvoid:
 
 
         if self.bringItAroundTown:
-            print("Bring it around town!")
             self.bringItAroundTown = False
             self.bring_it_around_town()
 
         elif not self.nearing_object and not self.bringItAroundTown:
-            print("No object!")
-            self.move_robot(0.1, -max(angular_z, -2.0) if angular_z < 0 else -min(angular_z, 2.0))
+            self.set_twister(0.1, -max(angular_z, -2.0) if angular_z < 0 else -min(angular_z, 2.0))
 
         else:
-            print("Obstacle detected!")
-            self.move_robot(0,0)
+            self.set_twister(0,0)
             rospy.sleep(5)
-
-            print("FINISH SLEEP!")
             if self.nearing_object:
                 self.bringItAroundTown = True
-            print("SUCCESS CHANGE")
-            print(self.bringItAroundTown)
 
 
         rate.sleep()
+        
+
+
+'''
+HELPER FUNCTIONS! Helps to set twister value easily, and change degrees2radians 
+'''
+    def set_twister(self, linear_x, angular_z):
+        self.twister.linear.x = linear_x
+        self.twister.angular.z = angular_z
+        self.velocity_pub.publish(self.twister)
+
+    
+    def degrees2radians(self, angle):
+        return angle * (math.pi/180.0)
+
 
 
 
