@@ -1,5 +1,5 @@
 # LANES ARE INSANE
-## Colby Beach and Hope Cristafi
+## Colby Beach and Hope Crisafi
 
 ### Basic Overview
 
