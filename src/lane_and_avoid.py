@@ -47,6 +47,7 @@ class LaneAndAvoid:
         self.front = np.mean([dist for dist in front_distances if not np.isinf(dist) and dist != 0])
 
         self.nearing_object = self.front < OBSTACLE_DISTANCE_THRESHOLD
+        
 
 
     '''
@@ -69,8 +70,6 @@ class LaneAndAvoid:
 
 
         while current_angle < self.degrees2radians(angle):
-            print(current_angle)
-            print(angle)
             self.velocity_pub.publish(outData)
             current_angle = (rospy.get_rostime().secs - t0) * self.degrees2radians(30)
             rate.sleep()
@@ -87,10 +86,11 @@ class LaneAndAvoid:
     '''
     def bring_it_around_town(self):    
 
-        for i in range(7)
-            self.move(0.5, i != 0 or i != 6)
-            self.rotate(90)
+        for i in range(3):
+            self.rotate(90, i != 0)
+            self.move(0.5, True)
 
+        self.rotate(90, False)
 
     '''
         Moves the turtlebot based off of a distance and whether 
@@ -122,7 +122,6 @@ class LaneAndAvoid:
         outData.linear.z = 0
         self.velocity_pub.publish(outData)
         
-        print("Move end")
         rospy.sleep(0.5)
 
 
@@ -145,9 +144,6 @@ class LaneAndAvoid:
         self.lastError = error
         rate = rospy.Rate(10)
 
-        current_time = rospy.Time.now()
-
-
         if self.bringItAroundTown:
             self.bringItAroundTown = False
             self.bring_it_around_town()
@@ -166,9 +162,9 @@ class LaneAndAvoid:
         
 
 
-'''
-HELPER FUNCTIONS! Helps to set twister value easily, and change degrees2radians 
-'''
+    '''
+    HELPER FUNCTIONS! Helps to set twister value easily, and change degrees2radians 
+    '''
     def set_twister(self, linear_x, angular_z):
         self.twister.linear.x = linear_x
         self.twister.angular.z = angular_z
