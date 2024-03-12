@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Author: Hope Crisafi
+# Author: Hope Crisafi and Colby Beach
 # 03/06/24
 
 import numpy as np
